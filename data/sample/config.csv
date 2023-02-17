@@ -1,0 +1,2 @@
+Method,Route,StatusCode,ResponseFileName
+GET,/sample/countries,200,./countries/200.json
