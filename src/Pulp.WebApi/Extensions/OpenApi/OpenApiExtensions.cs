@@ -34,7 +34,7 @@ public static class OpenApiExtensions
                     case OperationType.Get:
                         builder.MapGet(url, () =>
                         {
-                            object response = null;
+                            object? response = null;
                             if (operation.Responses.TryGetValue("200", out var okResponse))
                             {
                                 if (okResponse.Content.TryGetValue("application/json", out var appJsonResponse))
