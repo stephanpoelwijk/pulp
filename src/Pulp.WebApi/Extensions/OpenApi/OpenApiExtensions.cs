@@ -1,10 +1,13 @@
-﻿using Microsoft.OpenApi.Models;
+﻿using Bogus;
+using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Readers;
 
 namespace Pulp.WebApi.Extensions.OpenApi;
 
 public static class OpenApiExtensions
 {
+    private static Faker Faker = new Faker();
+
     public static IEndpointRouteBuilder UseOpenApiEndpoints(this IEndpointRouteBuilder builder)
     {
         var configuration = builder.ServiceProvider.GetRequiredService<OpenApiConfiguration>();
@@ -36,34 +39,7 @@ public static class OpenApiExtensions
                             {
                                 if (okResponse.Content.TryGetValue("application/json", out var appJsonResponse))
                                 {
-                                    if (appJsonResponse.Schema.Type == "array")
-                                    {
-                                        var arrayResponse = new List<object>();
-
-                                        for (int i = 0;i < 3;i++)
-                                        {
-                                            switch (appJsonResponse.Schema.Items.Type)
-                                            {
-                                                case "string": arrayResponse.Add("Array Response"); break;
-                                                default: throw new Exception($"Unknown type {appJsonResponse.Schema.Items.Type}");
-                                            }
-                                        }
-
-                                        response = arrayResponse;
-                                    }
-                                    else
-                                    {
-                                        var responseObject = new Dictionary<string, object>();
-                                        // Single object
-                                        foreach (var propName in appJsonResponse.Schema.Properties.Keys)
-                                        {
-                                            // TODO: Respect the type
-                                            responseObject[propName] = "SomeValue";
-
-                                        }
-
-                                        response = responseObject;
-                                    }
+                                    response = GenerateObjectFromSchema(appJsonResponse.Schema);
                                 }
                             }
 
@@ -105,5 +81,73 @@ public static class OpenApiExtensions
         }
 
         return builder;
+    }
+
+    private static object GenerateObjectFromSchema(OpenApiSchema schema)
+    {
+        if (schema.Type == "array")
+        {
+            var result = new List<object>();
+            for (int i = 0; i < 3; i++)
+            {
+                result.Add(GenerateObjectFromSchema(schema.Items));
+            }
+
+            return result;
+        }
+
+        // https://swagger.io/docs/specification/data-models/data-types/#numbers
+        switch (schema.Type)
+        {
+            case "boolean":
+                return Faker.Random.Bool();
+
+            case "string": 
+                if (schema.Format == "date")
+                {
+                    return Faker.Date.Recent().ToString("yyyy-MM-dd");
+                }
+                else if (schema.Format == "date-time")
+                {
+                    return Faker.Date.Recent().ToString("yyyy-MM-ddTHH:mm:ssZ");
+                }
+                
+                return Faker.Random.String2(5, 100);
+
+            case "number": 
+                if (schema.Format == "float" || string.IsNullOrEmpty(schema.Format))
+                {
+                    return Faker.Random.Float();
+                }
+                else if (schema.Format == "double")
+                {
+                    return Faker.Random.Double();
+                }
+
+                throw new Exception($"Strange combination type: '{schema.Type}' && format: '{schema.Format}'");
+                
+            case "integer":
+                if (schema.Format == "int32" || string.IsNullOrEmpty(schema.Format))
+                {
+                    return Faker.Random.Int();
+                }
+                else if (schema.Format == "int64")
+                {
+                    return Faker.Random.Long();
+                }
+
+                throw new Exception($"Strange combination type: '{schema.Type}' && format: '{schema.Format}'");
+
+            case "object":
+                {
+                    var responseObject = new Dictionary<string, object>();
+                    foreach (var propName in schema.Properties.Keys)
+                    {
+                        responseObject[propName] = GenerateObjectFromSchema(schema.Properties[propName]);
+                    }
+                    return responseObject;
+                }
+            default: throw new Exception($"Unknown type {schema.Type}");
+        }
     }
 }
