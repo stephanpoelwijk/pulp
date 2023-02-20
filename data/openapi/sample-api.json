@@ -1,0 +1,63 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "version": "0.001",
+    "title": "Some Sample API"
+  },
+  "basePath": "/",
+  "schemes": ["https"],
+  "consumes": ["application/json; charset=utf-8"],
+  "paths": {
+    "/money-maker-endpoint": {
+      "get": {
+        "tags": ["MoneyMaker"],
+        "summary": "Retrieves a list of moneymakers.",
+        "produces": ["application/json; charset=utf-8"],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "List of moneymakers",
+            "schema": {
+              "$ref": "#/definitions/moneymaker_Resources"
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "moneymaker_Resources": {
+      "required": ["moneyMakers"],
+      "properties": {
+        "moneyMakers": {
+          "type": "array",
+          "description": "Moneymakers",
+          "items": {
+            "$ref": "#/definitions/moneyMaker_Resource"
+          }
+        }
+      },
+      "description": "List of money makers"
+    },
+    "moneyMaker_Resource": {
+      "required": ["createdTime", "id", "name"],
+      "properties": {
+        "createdTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation date"
+        },
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Identifier"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the moneymaker"
+        }
+      },
+      "description": "A moneymaker"
+    }
+  }
+}
