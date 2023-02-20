@@ -1,6 +1,5 @@
 ﻿using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Readers;
-using Pulp.WebApi.Extensions.FileSystem;
 
 namespace Pulp.WebApi.Extensions.OpenApi;
 
@@ -32,7 +31,43 @@ public static class OpenApiExtensions
                     case OperationType.Get:
                         builder.MapGet(url, () =>
                         {
-                            return Results.Ok();
+                            object response = null;
+                            if (operation.Responses.TryGetValue("200", out var okResponse))
+                            {
+                                if (okResponse.Content.TryGetValue("application/json", out var appJsonResponse))
+                                {
+                                    if (appJsonResponse.Schema.Type == "array")
+                                    {
+                                        var arrayResponse = new List<object>();
+
+                                        for (int i = 0;i < 3;i++)
+                                        {
+                                            switch (appJsonResponse.Schema.Items.Type)
+                                            {
+                                                case "string": arrayResponse.Add("Array Response"); break;
+                                                default: throw new Exception($"Unknown type {appJsonResponse.Schema.Items.Type}");
+                                            }
+                                        }
+
+                                        response = arrayResponse;
+                                    }
+                                    else
+                                    {
+                                        var responseObject = new Dictionary<string, object>();
+                                        // Single object
+                                        foreach (var propName in appJsonResponse.Schema.Properties.Keys)
+                                        {
+                                            // TODO: Respect the type
+                                            responseObject[propName] = "SomeValue";
+
+                                        }
+
+                                        response = responseObject;
+                                    }
+                                }
+                            }
+
+                            return Results.Ok(response);
                         });
                         break;
                     case OperationType.Put:
