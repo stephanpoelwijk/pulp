@@ -1,11 +1,15 @@
-﻿using Bogus;
-using Microsoft.OpenApi.Models;
+﻿using Microsoft.OpenApi.Models;
 
 namespace Pulp.WebApi.Extensions.OpenApi;
 
 internal class ObjectGenerator : IObjectGenerator
 {
-    private static Faker Faker = new Faker();
+    private readonly IValueGenerator _valueGenerator;
+
+    public ObjectGenerator(IValueGenerator valueGenerator)
+    {
+        _valueGenerator = valueGenerator;
+    }
 
     public object GenerateObjectFromSchema(OpenApiSchema schema)
     {
@@ -24,28 +28,33 @@ internal class ObjectGenerator : IObjectGenerator
         switch (schema.Type)
         {
             case "boolean":
-                return Faker.Random.Bool();
+                return _valueGenerator.Bool();
 
             case "string":
                 if (schema.Format == "date")
                 {
-                    return Faker.Date.Recent().ToString("yyyy-MM-dd");
+                    return _valueGenerator.Date();
                 }
                 else if (schema.Format == "date-time")
                 {
-                    return Faker.Date.Recent().ToString("yyyy-MM-ddTHH:mm:ssZ");
+                    return _valueGenerator.DateTime();
                 }
 
-                return Faker.Random.String2(5, 100);
+                if (schema.Enum != null && schema.Enum.Any())
+                {
+                    return schema.Enum[_valueGenerator.Int(0, schema.Enum.Count)];
+                }
+
+                return _valueGenerator.String(schema.MinLength, schema.MaxLength);
 
             case "number":
                 if (schema.Format == "float" || string.IsNullOrEmpty(schema.Format))
                 {
-                    return Faker.Random.Float();
+                    return _valueGenerator.Float(schema.Minimum, schema.Maximum);
                 }
                 else if (schema.Format == "double")
                 {
-                    return Faker.Random.Double();
+                    return _valueGenerator.Double(schema.Minimum, schema.Maximum);
                 }
 
                 throw new Exception($"Strange combination type: '{schema.Type}' && format: '{schema.Format}'");
@@ -53,11 +62,11 @@ internal class ObjectGenerator : IObjectGenerator
             case "integer":
                 if (schema.Format == "int32" || string.IsNullOrEmpty(schema.Format))
                 {
-                    return Faker.Random.UInt();
+                    return _valueGenerator.Int(schema.Minimum, schema.Maximum);
                 }
                 else if (schema.Format == "int64")
                 {
-                    return Faker.Random.ULong();
+                    return _valueGenerator.Long(schema.Minimum, schema.Maximum);
                 }
 
                 throw new Exception($"Strange combination type: '{schema.Type}' && format: '{schema.Format}'");
@@ -66,10 +75,14 @@ internal class ObjectGenerator : IObjectGenerator
             case null:
                 {
                     var responseObject = new Dictionary<string, object>();
-                    foreach (var propName in schema.Properties.Keys)
+                    if (schema.Properties != null)
                     {
-                        responseObject[propName] = GenerateObjectFromSchema(schema.Properties[propName]);
+                        foreach (var propName in schema.Properties.Keys)
+                        {
+                            responseObject[propName] = GenerateObjectFromSchema(schema.Properties[propName]);
+                        }
                     }
+                    // TODO: Do something with additionalProperties
                     return responseObject;
                 }
             default: throw new Exception($"Unknown type {schema.Type}");

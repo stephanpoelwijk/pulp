@@ -74,7 +74,6 @@ public static class OpenApiExtensions
                     case OperationType.Trace:
                         // TODO: Figure out what to do with these if there is anything
                         break;
-
                 }
             }
         }

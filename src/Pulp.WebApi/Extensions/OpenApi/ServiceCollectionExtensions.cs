@@ -7,6 +7,7 @@ public static class ServiceCollectionExtensions
         var extensionConfiguration = new OpenApiConfiguration(configuration);
 
         services.AddSingleton(extensionConfiguration);
+        services.AddSingleton<IValueGenerator, ValueGenerator>();
         services.AddSingleton<IObjectGenerator, ObjectGenerator>();
 
         return services;
