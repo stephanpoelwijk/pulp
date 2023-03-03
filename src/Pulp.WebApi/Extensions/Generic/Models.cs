@@ -4,37 +4,88 @@ public class BackendService
 {
     public string Name { get; }
     public IEnumerable<Endpoint> Endpoints { get; } = Enumerable.Empty<Endpoint>();
+
+    public BackendService(string name, 
+        IEnumerable<Endpoint> endpoints)
+    {
+        Name = name;
+        Endpoints = endpoints;
+    }
 }
 
-public class Endpoint
+public abstract class Endpoint
 {
     public string Method { get; }
     public string RoutePattern { get; }
+
+    protected Endpoint(string method, 
+        string routePattern)
+    {
+        Method = method;
+        RoutePattern = routePattern;
+    }
 }
 
 public class DynamicEndpoint : Endpoint
 {
-    public ResponseType ResponseType { get; }
+    public TypeSchema ResponseTypeSchema { get; }
+
+    public DynamicEndpoint(string method, 
+        string routePattern,
+        TypeSchema responseTypeSchema) : base(method, routePattern)
+    {
+        ResponseTypeSchema = responseTypeSchema;
+    }
 }
 
 public class StaticEndpoint: Endpoint
 {
     public string ContentType { get; }
     public string ResponseContents { get; }
+
+    public StaticEndpoint(string method,
+        string routePattern,
+        string contentType,
+        string responseContents) : base(method, routePattern)
+    {
+        ContentType = contentType;
+        ResponseContents = responseContents;
+    }
 }
 
-public class ResponseType
+public class TypeSchema
 {
+    public static TypeSchema Integer = new("int", Enumerable.Empty<Property>(), null);
+    public static TypeSchema String = new("string", Enumerable.Empty<Property>(), null);
+
+    public string Type { get; }
+    public ContentGenerationHints? ContentGenerationHints { get; }
     public IEnumerable<Property> Properties { get; } = Enumerable.Empty<Property>();
+
+    public TypeSchema(string type, 
+        IEnumerable<Property> properties,
+        ContentGenerationHints? contentGenerationHints)
+    {
+        Type = type;
+        Properties = properties;
+        ContentGenerationHints = contentGenerationHints;
+    }
 }
 
 public class Property
 {
-    public string Type { get; } = default!;
     public string Name { get; } = default!;
+    public TypeSchema TypeSchema { get; } = default!;
     public bool IsOptional { get; }
 
-    public ContentGenerationHints? ContentGenerationHints { get; }
+    public Property(TypeSchema typeSchema, 
+        string name,
+        bool isOptional)
+    {
+        Name = name;
+        TypeSchema = typeSchema;
+        IsOptional = isOptional;
+    }
 }
 
 public class ContentGenerationHints
@@ -45,4 +96,19 @@ public class ContentGenerationHints
     public int? MinLength { get; }
     public int? MaxLength { get; }
     public IEnumerable<string>? AllowedValues { get; }
+
+    public ContentGenerationHints(string? fakerHint,
+        int? min,
+        int? max,
+        int? minLength,
+        int? maxLength,
+        IEnumerable<string>? allowedValues)
+    {
+        FakerHint = fakerHint;
+        Min = min;
+        Max = max;
+        MinLength = minLength;
+        MaxLength = maxLength;
+        AllowedValues = allowedValues;
+    }
 }

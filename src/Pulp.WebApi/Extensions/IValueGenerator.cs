@@ -1,4 +1,4 @@
-﻿namespace Pulp.WebApi.Extensions.OpenApi;
+﻿namespace Pulp.WebApi.Extensions;
 
 internal interface IValueGenerator
 {
