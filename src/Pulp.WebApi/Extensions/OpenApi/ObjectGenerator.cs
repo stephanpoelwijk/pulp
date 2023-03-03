@@ -42,7 +42,7 @@ internal class ObjectGenerator : IObjectGenerator
 
                 if (schema.Enum != null && schema.Enum.Any())
                 {
-                    return schema.Enum[_valueGenerator.Int(0, schema.Enum.Count)];
+                    return schema.Enum[_valueGenerator.Int(0, schema.Enum.Count - 1)];
                 }
 
                 return _valueGenerator.String(schema.MinLength, schema.MaxLength);
