@@ -31,53 +31,44 @@ public static class OpenApiExtensions
                 switch (operationType)
                 {
                     case OperationType.Get:
-                        builder.MapGet(url, () =>
-                        {
-                            object? response = null;
-                            if (operation.Responses.TryGetValue("200", out var okResponse))
-                            {
-                                if (okResponse.Content.TryGetValue("application/json", out var appJsonResponse))
-                                {
-                                    response = objectGenerator.GenerateObjectFromSchema(appJsonResponse.Schema);
-                                }
-                            }
-
-                            return Results.Ok(response);
-                        });
+                        builder.MapGet(url, () => CreateSuccessResponseFromOperation(operation, objectGenerator));
                         break;
                     case OperationType.Put:
-                        builder.MapPut(url, () =>
-                        {
-                            return Results.Ok();
-                        });
+                        builder.MapPut(url, () => CreateSuccessResponseFromOperation(operation, objectGenerator));
                         break;
                     case OperationType.Post:
-                        builder.MapPost(url, () =>
-                        {
-                            return Results.Ok();
-                        });
+                        builder.MapPost(url, () => CreateSuccessResponseFromOperation(operation, objectGenerator));
                         break;
                     case OperationType.Delete:
-                        builder.MapDelete(url, () =>
-                        {
-                            return Results.Ok();
-                        });
+                        builder.MapDelete(url, () => CreateSuccessResponseFromOperation(operation, objectGenerator));
                         break;
                     case OperationType.Patch:
-                        builder.MapPatch(url, () =>
-                        {
-                            return Results.Ok();
-                        });
+                        builder.MapPatch(url, () => CreateSuccessResponseFromOperation(operation, objectGenerator));
                         break;
                     case OperationType.Options:
                     case OperationType.Head:
                     case OperationType.Trace:
-                        // TODO: Figure out what to do with these if there is anything
+                        // TODO: Figure out what to do with these if there is anything that needs to be done
                         break;
                 }
             }
         }
 
         return builder;
+    }
+
+    private static IResult CreateSuccessResponseFromOperation(OpenApiOperation operation, IObjectGenerator objectGenerator)
+    {
+        // TODO: Not completely sure if defaulting is correct here
+        object? response = null;
+        if (operation.Responses.TryGetValue("200", out var okResponse))
+        {
+            if (okResponse.Content.TryGetValue("application/json", out var appJsonResponse))
+            {
+                response = objectGenerator.GenerateObjectFromSchema(appJsonResponse.Schema);
+            }
+        }
+
+        return Results.Ok(response);
     }
 }
