@@ -24,7 +24,7 @@ internal class ObjectGenerator : IObjectGenerator
             return result;
         }
 
-        // https://swagger.io/docs/specification/data-models/data-types/#numbers
+        // https://swagger.io/docs/specification/data-models/data-types
         switch (schema.Type)
         {
             case "boolean":
