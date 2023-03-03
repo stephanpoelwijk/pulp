@@ -44,4 +44,5 @@ public class ContentGenerationHints
     public int? Max { get; }
     public int? MinLength { get; }
     public int? MaxLength { get; }
+    public IEnumerable<string>? AllowedValues { get; }
 }
