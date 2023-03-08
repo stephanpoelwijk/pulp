@@ -1,4 +1,4 @@
-﻿using Pulp.WebApi.Extensions.Generic;
+﻿using Pulp.WebApi.Extensions.Generic.Models;
 
 namespace Pulp.WebApi.Extensions;
 

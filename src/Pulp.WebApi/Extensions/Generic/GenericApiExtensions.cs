@@ -1,16 +1,21 @@
-﻿namespace Pulp.WebApi.Extensions.Generic;
+﻿using Pulp.WebApi.Extensions.Generic.Models;
+using Pulp.WebApi.Import.OpenApi;
+
+namespace Pulp.WebApi.Extensions.Generic;
 
 public static class GenericApiExtensions
 {
     internal static IEndpointRouteBuilder UseGenericApiEndpoints(this IEndpointRouteBuilder builder)
     {
-        var backendService = GetTestService();
-
         var valueGenerator = builder.ServiceProvider.GetRequiredService<IValueGenerator>();
+        var configuration = builder.ServiceProvider.GetRequiredService<EndpointConfiguration>();
+        var openApiImporter = builder.ServiceProvider.GetRequiredService<OpenApiImporter>();
+
+        var backendService = openApiImporter.Import(configuration.OpenApiSpecFileName);
 
         foreach (var endpoint in backendService.Endpoints)
         {
-            switch (endpoint.Method)
+            switch (endpoint.Method.ToUpper())
             {
                 case "GET":
                     builder.MapGet(endpoint.RoutePattern, () => CreateSuccessResponseForEndpoint(valueGenerator, endpoint));
@@ -38,7 +43,7 @@ public static class GenericApiExtensions
         return builder;
     }
 
-    private static IResult CreateSuccessResponseForEndpoint(IValueGenerator valueGenerator, Endpoint endpoint)
+    private static IResult CreateSuccessResponseForEndpoint(IValueGenerator valueGenerator, BackendEndpoint endpoint)
     {
         if (endpoint is StaticEndpoint staticEndpoint)
         {
@@ -54,26 +59,13 @@ public static class GenericApiExtensions
         throw new NotImplementedException($"No idea what kind of endpoint '{endpoint.GetType().Name}' is");
     }
 
-    private static BackendService GetTestService()
+    private static object? CreateObjectForType(IValueGenerator valueGenerator, TypeSchema? responseType)
     {
-        return new BackendService("test",
-            new List<Endpoint>()
-            {
-                new StaticEndpoint("GET", "/someoranother/tests", "application/json", "{\"Hello\": \"World!\"}"),
-                new DynamicEndpoint("GET", "/someoranother/dynamictest", new TypeSchema(GenerationType.Object, new List<Property>()
-                {
-                    new Property(TypeSchema.Integer, "id", false),
-                    new Property(TypeSchema.String, "name", false),
-                    new Property(new TypeSchema(GenerationType.Object, new List<Property>()
-                    {
-                        new Property(TypeSchema.String, "someStringProp", false)
-                    }, null), "someSubProperty", false)
-                }, null))
-            });
-    }
+        if (responseType is null)
+        {
+            return null;
+        }
 
-    private static object CreateObjectForType(IValueGenerator valueGenerator, TypeSchema responseType)
-    {
         if (responseType.Type == GenerationType.Object)
         {
             var responseObject = new Dictionary<string, object?>();
@@ -100,6 +92,16 @@ public static class GenericApiExtensions
             }
 
             return responseObject;
+        }
+        else if (responseType.Type == GenerationType.Array && responseType.ItemType is not null)
+        {
+            var result = new List<object>();
+            for (int i = 0; i < 3; i++)
+            {
+                result.Add(CreateObjectForType(valueGenerator, responseType.ItemType));
+            }
+
+            return result;
         }
 
         throw new Exception($"Unknown response type {responseType.Type}");
