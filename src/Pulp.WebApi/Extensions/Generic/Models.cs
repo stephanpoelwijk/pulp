@@ -55,14 +55,14 @@ public class StaticEndpoint: Endpoint
 
 public class TypeSchema
 {
-    public static TypeSchema Integer = new("int", Enumerable.Empty<Property>(), null);
-    public static TypeSchema String = new("string", Enumerable.Empty<Property>(), null);
+    public static TypeSchema Integer = new(GenerationType.Int, Enumerable.Empty<Property>(), null);
+    public static TypeSchema String = new(GenerationType.String, Enumerable.Empty<Property>(), null);
 
-    public string Type { get; }
+    public GenerationType Type { get; }
     public ContentGenerationHints? ContentGenerationHints { get; }
     public IEnumerable<Property> Properties { get; } = Enumerable.Empty<Property>();
 
-    public TypeSchema(string type, 
+    public TypeSchema(GenerationType type, 
         IEnumerable<Property> properties,
         ContentGenerationHints? contentGenerationHints)
     {
@@ -70,6 +70,15 @@ public class TypeSchema
         Properties = properties;
         ContentGenerationHints = contentGenerationHints;
     }
+}
+
+public enum GenerationType
+{
+    Int,
+    Float,
+    Long,
+    String,
+    Object
 }
 
 public class Property

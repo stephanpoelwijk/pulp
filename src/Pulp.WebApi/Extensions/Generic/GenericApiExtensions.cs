@@ -60,11 +60,11 @@ public static class GenericApiExtensions
             new List<Endpoint>()
             {
                 new StaticEndpoint("GET", "/someoranother/tests", "application/json", "{\"Hello\": \"World!\"}"),
-                new DynamicEndpoint("GET", "/someoranother/dynamictest", new TypeSchema("object", new List<Property>()
+                new DynamicEndpoint("GET", "/someoranother/dynamictest", new TypeSchema(GenerationType.Object, new List<Property>()
                 {
                     new Property(TypeSchema.Integer, "id", false),
                     new Property(TypeSchema.String, "name", false),
-                    new Property(new TypeSchema("object", new List<Property>()
+                    new Property(new TypeSchema(GenerationType.Object, new List<Property>()
                     {
                         new Property(TypeSchema.String, "someStringProp", false)
                     }, null), "someSubProperty", false)
@@ -74,7 +74,7 @@ public static class GenericApiExtensions
 
     private static object CreateObjectForType(IValueGenerator valueGenerator, TypeSchema responseType)
     {
-        if (responseType.Type == "object")
+        if (responseType.Type == GenerationType.Object)
         {
             var responseObject = new Dictionary<string, object?>();
             foreach (var property in  responseType.Properties)
@@ -82,13 +82,16 @@ public static class GenericApiExtensions
                 object? value = null;
                 switch (property.TypeSchema.Type)
                 {
-                    case "int":
-                        value = valueGenerator.Int(null, null);
+                    case GenerationType.Int:
+                        value = valueGenerator.Int(property.TypeSchema.ContentGenerationHints);
                         break;
-                    case "string":
-                        value = valueGenerator.String(null, null);
+                    case GenerationType.Long:
+                        value = valueGenerator.Long(property.TypeSchema.ContentGenerationHints);
                         break;
-                    case "object":
+                    case GenerationType.String:
+                        value = valueGenerator.String(property.TypeSchema.ContentGenerationHints);
+                        break;
+                    case GenerationType.Object:
                         value = CreateObjectForType(valueGenerator, property.TypeSchema);
                         break;
                 }
